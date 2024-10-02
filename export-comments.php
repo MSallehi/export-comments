@@ -1,9 +1,9 @@
 <?php
 /*
-Plugin Name: Comment Exporter
+Plugin Name: خروجی کامنت ها
 Description: Export comments from selected page or post to CSV.
 Version: 1.2
-Author: Your Name
+Author: Mohammad Salehi (https://github.com/MSallehi)
  */
 
 if (!defined('ABSPATH')) {
