@@ -1,9 +1,14 @@
 <?php
-/*
-Plugin Name: خروجی کامنت ها
-Description: Export comments from selected page or post to CSV.
-Version: 1.2
-Author: Mohammad Salehi (https://github.com/MSallehi)
+/**
+ * Plugin Name: خروجی کامنت ها
+ * Plugin URI:  https://github.com/MSallehi/export-comments
+ * Description: Export comments from selected page or post to CSV.
+ * Version:     1.0.0
+ * Author:      Mohammad Salehi
+ * Author URI:  https://github.com/MSallehi
+ * License:     GPL-2.0-or-later
+ * License URI: https://www.gnu.org/licenses/gpl-2.0.html
+ * Text Domain: comment-exporter
  */
 
 if (!defined('ABSPATH')) {
@@ -23,6 +28,8 @@ class Comment_Exporter
         add_action('admin_post_export_comments_to_csv', array($this, 'export_comments_to_csv'));
 
         add_action('admin_enqueue_scripts', array($this, 'enqueue_scripts'));
+
+        add_action('wp_ajax_search_posts', array($this, 'ajax_search_posts'));
     }
 
     public function enqueue_scripts($hook)
@@ -59,12 +66,7 @@ class Comment_Exporter
                 <input type="hidden" name="action" value="export_comments_to_csv">
                 <label for="post_id"><?php _e('انتخاب برگه یا نوشته', 'comment-exporter');?></label>
                 <select name="post_id" id="post_id" style="width: 50%;">
-                    <?php
-$posts = get_posts(array('post_type' => array('page', 'post'), 'numberposts' => -1));
-        foreach ($posts as $post) {
-            echo '<option value="' . $post->ID . '">' . $post->post_title . ' (' . ucfirst($post->post_type) . ')</option>';
-        }
-        ?>
+
                 </select>
                 <?php submit_button(__('خروجی CSV', 'comment-exporter'));?>
             </form>
@@ -103,6 +105,34 @@ $posts = get_posts(array('post_type' => array('page', 'post'), 'numberposts' => 
                 exit;
             }
         }
+    }
+
+    public function ajax_search_posts()
+    {
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error('Unauthorized');
+            return;
+        }
+
+        $search_term = isset($_GET['q']) ? sanitize_text_field($_GET['q']) : '';
+
+        $posts = get_posts(array(
+            'post_type' => array('post', 'page'),
+            's' => $search_term,
+            'posts_per_page' => 10,
+        ));
+
+        $results = array();
+
+        foreach ($posts as $post) {
+            $results[] = array(
+                'id' => $post->ID,
+                'text' => $post->post_title . ' (' . ucfirst($post->post_type) . ')',
+            );
+        }
+
+        wp_send_json($results);
+
     }
 }
 
