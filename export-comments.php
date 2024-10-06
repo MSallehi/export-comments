@@ -78,7 +78,11 @@ class Comment_Exporter
     {
         if (isset($_POST['post_id'])) {
             $post_id = intval($_POST['post_id']);
-            $comments = get_comments(array('post_id' => $post_id));
+            $comments = get_comments([
+                'post_id' => $post_id,
+                'parent' => 0,
+                'status' => 'approve',
+            ]);
 
             if (!empty($comments)) {
 
@@ -86,16 +90,34 @@ class Comment_Exporter
                 $post_title = sanitize_file_name($post->post_title);
 
                 header('Content-Type: text/csv; charset=UTF-8');
-                header('Content-Disposition: attachment;filename=' . $post_title . '_کامنت.csv');
+                header('Content-Disposition: attachment;filename=' . $post_title . '_comments.csv');
 
                 $output = fopen('php://output', 'w');
 
                 fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
 
-                fputcsv($output, array('نویسنده', 'کامنت', 'تاریخ'));
+                fputcsv($output, array('نویسنده سوال', 'نویسنده جواب', 'سوال', 'جواب', 'تاریخ میلادی'));
 
                 foreach ($comments as $comment) {
-                    fputcsv($output, array($comment->comment_author, $comment->comment_content, $comment->comment_date));
+                    $question_author = isset($comment->comment_author) ? $comment->comment_author : 'بدون نام';
+                    $question_content = $comment->comment_content;
+                    $date_gregorian = $comment->comment_date;
+
+                    $replies = get_comments([
+                        'parent' => $comment->comment_ID,
+                        'status' => 'approve',
+                    ]);
+
+                    if (!empty($replies)) {
+                        foreach ($replies as $reply) {
+                            $reply_author = isset($reply->comment_author) ? $reply->comment_author : 'بدون نام';
+                            $reply_content = isset($reply->comment_content) ? $reply->comment_content : 'بدون پاسخ';
+
+                            fputcsv($output, array($question_author, $reply_author, $question_content, $reply_content, $date_gregorian));
+                        }
+                    } else {
+                        fputcsv($output, array($question_author, $question_content, 'بدون پاسخ', 'بدون پاسخ', $date_gregorian));
+                    }
                 }
 
                 fclose($output);
@@ -106,7 +128,6 @@ class Comment_Exporter
             }
         }
     }
-
     public function ajax_search_posts()
     {
         if (!current_user_can('manage_options')) {
@@ -132,7 +153,6 @@ class Comment_Exporter
         }
 
         wp_send_json($results);
-
     }
 }
 
