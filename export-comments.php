@@ -110,13 +110,13 @@ class Comment_Exporter
 
                     if (!empty($replies)) {
                         foreach ($replies as $reply) {
-                            $reply_author = isset($reply->comment_author) ? $reply->comment_author : 'بدون نام';
-                            $reply_content = isset($reply->comment_content) ? $reply->comment_content : 'بدون پاسخ';
+                            $reply_author = $reply->comment_author;
+                            $reply_content = $reply->comment_content;
 
                             fputcsv($output, array($question_author, $reply_author, $question_content, $reply_content, $date_gregorian));
                         }
                     } else {
-                        fputcsv($output, array($question_author, $question_content, 'بدون پاسخ', 'بدون پاسخ', $date_gregorian));
+                        fputcsv($output, array($question_author, 'بدون پاسخ', $question_content, 'بدون پاسخ', $date_gregorian));
                     }
                 }
 
